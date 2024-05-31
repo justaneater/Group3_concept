@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Example</title>
+    <style>
+        video, canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        .controls, .main-controls {
+            text-align: center;
+            margin-top: 10px;
+        }
+        #photos {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .photo {
+            display: inline-block;
+            margin: 5px;
+            text-align: center;
+        }
+        .photo img {
+            width: 320px;
+            height: 240px;
+        }
+        #camera-container, #main-container, #upload-container {
+            display: none;
+        }
+        #main-container {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <h1 style="text-align: center;">Welcome to the Camera App</h1>
+        <div class="main-controls">
+            <button id="start-camera">Start Camera</button>
+        </div>
+    </div>
+    <div id="camera-container">
+        <h1 style="text-align: center;">Simple Camera App</h1>
+        <video id="video" width="640" height="480" autoplay></video>
+        <div class="controls">
+            <button id="snap">Take Picture</button>
+            <button id="delete">Delete Last Picture</button>
+            <button id="upload">Finish and Upload</button>
+        </div>
+        <div id="photos"></div>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
+    <div id="upload-container" style="text-align: center;">
+        <h1>Uploaded Photos</h1>
+        <div id="photos-uploaded"></div>
+        <button id="restart-camera">Restart Camera</button>
+        <button id="return-main">Return to Main</button>
+    </div>
+
+    <script>
+        // Main Page Elements
+        var mainContainer = document.getElementById('main-container');
+        var startCameraButton = document.getElementById('start-camera');
+        
+        // Camera Page Elements
+        var cameraContainer = document.getElementById('camera-container');
+        var video = document.getElementById('video');
+        var snapButton = document.getElementById('snap');
+        var deleteButton = document.getElementById('delete');
+        var uploadButton = document.getElementById('upload');
+        var photosContainer = document.getElementById('photos');
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+        var photos = [];
+
+        // Upload Page Elements
+        var uploadContainer = document.getElementById('upload-container');
+        var photosUploadedContainer = document.getElementById('photos-uploaded');
+        var restartCameraButton = document.getElementById('restart-camera');
+        var returnMainButton = document.getElementById('return-main');
+
+        // Event Listeners
+        startCameraButton.addEventListener('click', function() {
+            mainContainer.style.display = 'none';
+            cameraContainer.style.display = 'block';
+            startCamera();
+        });
+
+        snapButton.addEventListener('click', function() {
+            if (photos.length < 10) {
+                context.drawImage(video, 0, 0, 640, 480);
+                var img = new Image();
+                img.src = canvas.toDataURL('image/png');
+                img.className = 'photo';
+                photos.push(img);
+                renderPhotos();
+                photosContainer.scrollLeft = photosContainer.scrollWidth; // Scroll to the right
+            } else {
+                alert("You can only store up to 10 photos.");
+            }
+        });
+
+        deleteButton.addEventListener('click', function() {
+            if (photos.length > 0) {
+                photos.pop();
+                renderPhotos();
+            } else {
+                alert("No photos to delete.");
+            }
+        });
+
+        uploadButton.addEventListener('click', function() {
+            cameraContainer.style.display = 'none';
+            uploadContainer.style.display = 'block';
+            renderUploadedPhotos();
+            stopCamera();
+        });
+
+        restartCameraButton.addEventListener('click', function() {
+            uploadContainer.style.display = 'none';
+            cameraContainer.style.display = 'block';
+            photos = [];
+            photosContainer.innerHTML = '';
+            startCamera();
+        });
+
+        returnMainButton.addEventListener('click', function() {
+            uploadContainer.style.display = 'none';
+            mainContainer.style.display = 'block';
+            photos = [];
+            photosContainer.innerHTML = '';
+            photosUploadedContainer.innerHTML = '';
+        });
+
+        function renderPhotos() {
+            photosContainer.innerHTML = '';
+            photos.forEach((img, index) => {
+                var photoDiv = document.createElement('div');
+                photoDiv.className = 'photo';
+                
+                var caption = document.createElement('p');
+                caption.innerText = `This is photo number ${index + 1}`;
+                
+                photoDiv.appendChild(caption);
+                photoDiv.appendChild(img);
+                photosContainer.appendChild(photoDiv);
+            });
+        }
+
+        function renderUploadedPhotos() {
+            photosUploadedContainer.innerHTML = '';
+            photos.forEach((img, index) => {
+                var photoDiv = document.createElement('div');
+                photoDiv.className = 'photo';
+                
+                var caption = document.createElement('p');
+                caption.innerText = `This is photo number ${index + 1}`;
+                
+                photoDiv.appendChild(caption);
+                photoDiv.appendChild(img);
+                photosUploadedContainer.appendChild(photoDiv);
+            });
+        }
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+        }
+
+        function stopCamera() {
+            var stream = video.srcObject;
+            var tracks = stream.getTracks();
+
+            tracks.forEach(function(track) {
+                track.stop();
+            });
+
+            video.srcObject = null;
+        }
+    </script>
+</body>
+</html>
